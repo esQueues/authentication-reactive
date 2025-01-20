@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+</head>
+<body>
+<h1>API Interaction</h1>
+
+<!-- Registration Form -->
+<h2>Register User</h2>
+<input type="text" id="regUsername" placeholder="Username" />
+<input type="password" id="regPassword" placeholder="Password" />
+<input type="text" id="regFirstName" placeholder="First Name" />
+<input type="text" id="regLastName" placeholder="Last Name" />
+<button onclick="registerUser()">Register</button>
+
+<!-- Login Form -->
+<h2>Login User</h2>
+<input type="text" id="loginUsername" placeholder="Username" />
+<input type="password" id="loginPassword" placeholder="Password" />
+<button onclick="loginUser()">Login</button>
+
+<!-- Get User Info -->
+<h2>User Info</h2>
+<button onclick="getUserInfo()">Get User Info</button>
+
+<pre id="response"></pre>
+
+<script>
+    const baseUrl = 'http://localhost:8080/api/v1/auth';
+
+    // Register User Function
+    async function registerUser() {
+        const username = document.getElementById('regUsername').value;
+        const password = document.getElementById('regPassword').value;
+        const firstName = document.getElementById('regFirstName').value;
+        const lastName = document.getElementById('regLastName').value;
+
+        // Prepare registration data
+        const data = {
+            username,
+            password,
+            first_name: firstName,
+            last_name: lastName,
+        };
+
+        try {
+            const response = await fetch(`${baseUrl}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                throw new Error('Registration failed!');
+            }
+
+            const responseData = await response.json();
+            document.getElementById('response').innerText = 'User Registered: ' + JSON.stringify(responseData, null, 2);
+        } catch (error) {
+            document.getElementById('response').innerText = `Error: ${error.message}`;
+        }
+    }
+
+    // Login User Function
+    async function loginUser() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const data = {
+            username,
+            password,
+        };
+
+        try {
+            const response = await fetch(`${baseUrl}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                throw new Error('Login failed!');
+            }
+
+            const responseData = await response.json();
+            localStorage.setItem('token', responseData.token); // Store token
+            document.getElementById('response').innerText = 'Login Successful: ' + JSON.stringify(responseData, null, 2);
+        } catch (error) {
+            document.getElementById('response').innerText = `Error: ${error.message}`;
+        }
+    }
+
+    // Get User Info Function
+    async function getUserInfo() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('No token found. Please log in first.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${baseUrl}/info`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // Include token in the header
+                },
+            });
+
+            if (response.status === 401) {
+                alert('Unauthorized. Please log in again.');
+                return;
+            }
+
+            const data = await response.json();
+            document.getElementById('response').innerText = 'User Info: ' + JSON.stringify(data, null, 2);
+        } catch (error) {
+            document.getElementById('response').innerText = `Error: ${error.message}`;
+        }
+    }
+</script>
+</body>
+</html>
